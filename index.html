@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HomeCraft - West Bengal Home Services Platform</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --dark: #0f172a;
+      --light: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #334155;
+      --text-muted: #64748b;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s ease;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--light); color: var(--text); line-height: 1.6; }
+
+    nav {
+      position: sticky; top: 0; background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+      z-index: 1000; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .logo { font-size: 1.5rem; font-weight: 800; color: var(--dark); cursor: pointer; }
+    .logo span { color: var(--primary); }
+
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; align-items: center; }
+    .nav-links a { text-decoration: none; color: var(--text); font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+
+    .btn { padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: var(--transition); }
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+
+    .page-view { display: none; padding: 2.5rem 5%; max-width: 1200px; margin: 0 auto; }
+    .page-view.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.8rem; margin-top: 1.5rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; box-shadow: var(--shadow); }
+
+    .profile-img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 0.8rem; }
+    .badge-verified { background: #d1fae5; color: #047857; padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: var(--surface);
+    }
+
+    #dropZone {
+      border: 2px dashed var(--primary); border-radius: 10px; padding: 1.5rem;
+      text-align: center; background: #eff6ff; cursor: pointer; transition: var(--transition);
+    }
+    #dropZone:hover { background: #dbeafe; }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; opacity: 0; pointer-events: none; transition: var(--transition); }
+    .modal.active { opacity: 1; pointer-events: auto; }
+    .modal-content { background: var(--surface); padding: 2rem; border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav>
+    <div class="logo" onclick="showPage('homePage')">Home<span>Craft WB</span></div>
+    <ul class="nav-links">
+      <li><a id="navHome" class="active" onclick="showPage('homePage')">Explore</a></li>
+      <li><a id="navBooking" onclick="showPage('bookingPage')">Book Service</a></li>
+      <li><a id="navProfile" onclick="showPage('profilePage')">My Account Profile</a></li>
+      <li><a id="navCustomer" onclick="showPage('customerDashboardPage')">Customer Orders</a></li>
+      <li><a id="navSeller" onclick="showPage('sellerCentralPage')">Seller Central</a></li>
+      <li><button class="btn btn-primary" id="loginNavBtn" onclick="handleNavAuthClick()">Sign In</button></li>
+    </ul>
+  </nav>
+
+  <!-- PAGE 1: EXPLORE MARKETPLACE -->
+  <section class="page-view active" id="homePage">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <h1 style="font-size: 2.5rem; color: var(--dark);">Vetted Local Services Across West Bengal</h1>
+      <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem;">Hire SMS Verified specialists with official profile photos.</p>
+    </div>
+    <h2>Featured Professionals</h2>
+    <div class="grid" id="homeWorkerGrid"></div>
+  </section>
+
+  <!-- PAGE 2: BOOKING PAGE -->
+  <section class="page-view" id="bookingPage">
+    <h2>Book a Service</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Search or select your West Bengal city to find active providers.</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+      <div class="card" style="height: fit-content;">
+        <h3>1. Search Location</h3>
+        <br>
+        <div class="form-group">
+          <label>🔍 Search City</label>
+          <input type="text" id="citySearchBox" placeholder="Type city (e.g. Kolkata, Siliguri)..." onkeyup="searchAndFilterCities()">
+        </div>
+        <div class="form-group">
+          <label>Select West Bengal City</label>
+          <select id="bookingCityFilter" onchange="filterWorkersForBooking()" class="wb-city-select"></select>
+        </div>
+      </div>
+
+      <div>
+        <h3>2. Select Professional</h3>
+        <div id="bookingWorkerList" class="grid" style="grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 3: USER PROFILE WEBPAGE -->
+  <section class="page-view" id="profilePage">
+    <h2>Account Profile Webpage</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">View your account profile status and SMS verification badges.</p>
+
+    <div class="card" style="max-width: 600px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <img id="pPic" src="https://via.placeholder.com/120" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+        <h3 id="pName" style="margin-top: 0.5rem;">-</h3>
+        <span class="badge-verified" id="pVerifiedBadge">✓ SMS Phone Verified</span>
+      </div>
+      <p><strong>Account Role:</strong> <span id="pRole">-</span></p>
+      <p><strong>Email Address:</strong> <span id="pEmail">-</span></p>
+      <p><strong>Mobile Phone:</strong> <span id="pPhone">-</span></p>
+      <p><strong>City / Location:</strong> <span id="pCity">-</span></p>
+      <p><strong>Service Address:</strong> <span id="pAddress">-</span></p>
+    </div>
+  </section>
+
+  <!-- PAGE 4: CUSTOMER ORDERS DASHBOARD -->
+  <section class="page-view" id="customerDashboardPage">
+    <h2>Customer Orders Dashboard</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Track active bookings and order history.</p>
+    <div id="customerOrdersContainer"></div>
+  </section>
+
+  <!-- PAGE 5: SELLER CENTRAL (LISTER PORTAL) -->
+  <section class="page-view" id="sellerCentralPage">
+    <h2>Seller Central Portal</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Manage your business profile, client requests, and rates.</p>
+    
+    <div class="grid" style="grid-template-columns: 1fr 2fr;">
+      <div class="card">
+        <h3>Seller Business Profile</h3>
+        <br>
+        <img id="scPic" class="profile-img" src="" alt="Profile Pic">
+        <p><strong>Name:</strong> <span id="scName">-</span></p>
+        <p><strong>Category:</strong> <span id="scCategory">-</span></p>
+        <p><strong>Rate:</strong> $<span id="scRate">-</span> / hr</p>
+        <p><strong>City:</strong> <span id="scCity">-</span></p>
+      </div>
+
+      <div class="card">
+        <h3>Received Client Orders</h3>
+        <br>
+        <div id="scOrders"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL 1: LOGIN -->
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <h2>Sign In to HomeCraft</h2>
+      <br>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" required></div>
+        <div class="form-group"><label>Password</label><input type="password" id="loginPassword" required></div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+      </form>
+      <br>
+      <p style="font-size: 0.9rem; text-align: center;">
+        Don't have an account? <a onclick="toggleModal('loginModal'); toggleModal('registerModal');" style="color: var(--primary); cursor: pointer; font-weight: bold;">Register Here</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- MODAL 2: REGISTER -->
+  <div class="modal" id="registerModal">
+    <div class="modal-content">
+      <h2>Create Account</h2>
+      <br>
+      <form onsubmit="handleRegister(event)">
+        <div class="form-group"><label>Full Name</label><input type="text" id="regName" required></div>
+        <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" required></div>
+        <div class="form-group"><label>Password</label><input type="password" id="regPassword" required></div>
+        <div class="form-group"><label>Mobile Phone Number (for SMS OTP)</label><input type="tel" id="regPhone" placeholder="10-digit phone number" required></div>
+        <div class="form-group">
+          <label>Account Type</label>
+          <select id="regRole" onchange="toggleListerPicRequirement()">
+            <option value="customer">Customer Account</option>
+            <option value="lister">Lister / Service Provider</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>City (West Bengal)</label>
+          <select id="regCity" class="wb-city-select" required></select>
+        </div>
+
+        <div id="listerExtraFields" style="display: none;">
+          <div class="form-group">
+            <label style="color: #b91c1c;">Profile Photo (MANDATORY FOR LISTERS)</label>
+            <div id="dropZone">
+              <p id="dropZoneText" style="margin: 0; color: var(--primary); font-weight: bold;">📁 Drag & Drop photo here</p>
+              <input type="file" id="regFileInput" accept="image/*" style="display: none;">
+              <img id="imagePreview" style="display: none; max-width: 110px; max-height: 110px; border-radius: 50%; margin: 0.6rem auto 0; object-fit: cover;">
+            </div>
+            <input type="hidden" id="regProfilePic">
+          </div>
+
+          <div class="form-group">
+            <label>Service Category</label>
+            <select id="regCategory">
+              <option value="Cooking">Cooking</option>
+              <option value="Home Cleaning">Home Cleaning</option>
+              <option value="Clothes Washing">Clothes Washing</option>
+              <option value="Mobile/PC Repair">Mobile/PC Repair</option>
+              <option value="Tutor">Tutor</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Hourly Rate ($)</label><input type="number" id="regRate" value="25"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account & Send SMS OTP</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: SMS VERIFICATION OTP -->
+  <div class="modal" id="otpModal">
+    <div class="modal-content">
+      <h2>📱 SMS Verification</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;" id="otpPhoneNotice">
+        Enter the 6-digit OTP code sent via SMS to your mobile phone (also printed in terminal).
+      </p>
+      <form onsubmit="handleVerifySMS(event)">
+        <div class="form-group">
+          <label>6-Digit SMS OTP Code</label>
+          <input type="text" id="otpInput" placeholder="123456" maxlength="6" required style="font-size: 1.5rem; text-align: center; letter-spacing: 4px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Verify Mobile & Activate</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:3000/api';
+    let currentUser = JSON.parse(localStorage.getItem('hc_user')) || null;
+    let currentToken = localStorage.getItem('hc_token') || null;
+    let pendingSMSUserId = null;
+    let allWorkers = [];
+
+    const westBengalCities = [
+      "Alipurduar", "Arambagh", "Asansol", "Baharampur", "Bally", "Balurghat", 
+      "Bankura", "Barasat", "Bardhaman", "Barrackpore", "Bidhannagar (Salt Lake)", 
+      "Cooch Behar", "Darjeeling", "Durgapur", "Haldia", "Howrah", "Jalpaiguri", 
+      "Kharagpur", "Kolkata", "Krishnanagar", "Malda", "Purulia", "Ranaghat", "Siliguri"
+    ];
+
+    function populateCities() {
+      document.querySelectorAll('.wb-city-select').forEach(select => {
+        select.innerHTML = select.id === 'bookingCityFilter' 
+          ? '<option value="">-- All WB Cities --</option>' 
+          : '<option value="">-- Select WB City --</option>';
+
+        westBengalCities.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c; opt.textContent = c;
+          select.appendChild(opt);
+        });
+      });
+    }
+
+    function searchAndFilterCities() {
+      const q = document.getElementById('citySearchBox').value.toLowerCase();
+      const sel = document.getElementById('bookingCityFilter');
+      sel.innerHTML = '<option value="">-- All WB Cities --</option>';
+
+      westBengalCities.filter(c => c.toLowerCase().includes(q)).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
+      });
+      filterWorkersForBooking();
+    }
+
+    function showPage(id) {
+      document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+      
+      document.getElementById(id).classList.add('active');
+
+      if (id === 'profilePage') loadUserProfilePage();
+      if (id === 'customerDashboardPage') loadCustomerDashboard();
+      if (id === 'sellerCentralPage') loadSellerCentral();
+    }
+
+    function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+
+    function handleNavAuthClick() {
+      if (currentUser) {
+        localStorage.removeItem('hc_user'); localStorage.removeItem('hc_token');
+        currentUser = null; currentToken = null;
+        updateAuthNav();
+        alert('Signed Out Successfully.');
+        showPage('homePage');
+      } else {
+        toggleModal('loginModal');
+      }
+    }
+
+    function updateAuthNav() {
+      const btn = document.getElementById('loginNavBtn');
+      btn.innerText = currentUser ? `Sign Out (${currentUser.name})` : 'Sign In';
+    }
+
+    function toggleListerPicRequirement() {
+      const role = document.getElementById('regRole').value;
+      document.getElementById('listerExtraFields').style.display = role === 'lister' ? 'block' : 'none';
+    }
+
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('regFileInput');
+      const preview = document.getElementById('imagePreview');
+      const hiddenInput = document.getElementById('regProfilePic');
+
+      dropZone.addEventListener('click', () => fileInput.click());
+
+      ['dragenter', 'dragover'].forEach(e => {
+        dropZone.addEventListener(e, (evt) => { evt.preventDefault(); dropZone.style.background = '#dbeafe'; });
+      });
+
+      ['dragleave', 'drop'].forEach(e => {
+        dropZone.addEventListener(e, (evt) => { evt.preventDefault(); dropZone.style.background = '#eff6ff'; });
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) processFile(files[0]);
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) processFile(e.target.files[0]);
+      });
+
+      function processFile(file) {
+        if (!file.type.startsWith('image/')) return alert('Please upload an image file.');
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          hiddenInput.value = evt.target.result;
+          preview.src = evt.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function fetchWorkers() {
+      try {
+        const res = await fetch(`${API}/workers`);
+        allWorkers = await res.json();
+        renderHomeWorkers();
+        filterWorkersForBooking();
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    function renderHomeWorkers() {
+      const grid = document.getElementById('homeWorkerGrid');
+      grid.innerHTML = allWorkers.map(w => `
+        <div class="card">
+          <img src="${w.profile_pic}" class="profile-img" alt="${w.name}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>${w.name}</h3>
+            <span class="badge-verified">✓ SMS Verified</span>
+          </div>
+          <p style="color:var(--primary); font-weight:600;">${w.category}</p>
+          <p style="font-size:0.85rem; color:var(--text-muted);">📍 ${w.city}</p>
+          <div style="font-size:1.2rem; font-weight:bold; margin:0.5rem 0;">$${w.rate} / hr</div>
+          <button class="btn btn-primary" style="width:100%;" onclick="bookWorker(${w.lister_user_id}, '${w.category}', ${w.rate})">Book Service</button>
+        </div>
+      `).join('');
+    }
+
+    function filterWorkersForBooking() {
+      const city = document.getElementById('bookingCityFilter').value.toLowerCase();
+      const filtered = allWorkers.filter(w => !city || w.city.toLowerCase() === city);
+
+      const list = document.getElementById('bookingWorkerList');
+      if (filtered.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-muted);">No verified professionals available in this city.</p>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(w => `
+        <div class="card" style="display:flex; gap:1rem; align-items:center;">
+          <img src="${w.profile_pic}" style="width:70px; height:70px; border-radius:50%; object-fit:cover;">
+          <div style="flex:1;">
+            <h4>${w.name} <span class="badge-verified">✓ ${w.city}</span></h4>
+            <p style="font-size:0.85rem; color:var(--text-muted);">${w.category} • $${w.rate}/hr</p>
+          </div>
+          <button class="btn btn-primary" onclick="bookWorker(${w.lister_user_id}, '${w.category}', ${w.rate})">Book</button>
+        </div>
+      `).join('');
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const role = document.getElementById('regRole').value;
+      const profilePic = document.getElementById('regProfilePic').value;
+
+      if (role === 'lister' && (!profilePic || profilePic.trim() === '')) {
+        alert('❌ Profile photo is mandatory for Listers.');
+        return;
+      }
+
+      const body = {
+        name: document.getElementById('regName').value,
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPassword').value,
+        phone: document.getElementById('regPhone').value,
+        role,
+        city: document.getElementById('regCity').value,
+        profile_pic: profilePic,
+        category: document.getElementById('regCategory').value,
+        rate: document.getElementById('regRate').value,
+      };
+
+      try {
+        const res = await fetch(`${API}/auth/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const contentType = res.headers.get('content-type');
+        let data;
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}`);
+        }
+
+        if (res.ok && data.requires2FA) {
+          pendingSMSUserId = data.userId;
+          document.getElementById('otpPhoneNotice').innerText = `Enter the 6-digit OTP code sent via SMS to ${data.phone} (also printed in node terminal).`;
+          toggleModal('registerModal');
+          toggleModal('otpModal');
+        } else {
+          alert(data.error || 'Registration failed.');
+        }
+      } catch (err) {
+        console.error('Registration Error:', err);
+        alert(err.message || 'Server error. Check terminal output.');
+      }
+    }
+
+    async function handleVerifySMS(e) {
+      e.preventDefault();
+      const otp = document.getElementById('otpInput').value;
+
+      if (!pendingSMSUserId) {
+        alert('Missing pending user ID. Please re-register.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/auth/verify-sms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: pendingSMSUserId, otp })
+        });
+
+        const contentType = res.headers.get('content-type');
+        let data;
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(`Server returned error: ${text.slice(0, 100)}`);
+        }
+
+        if (res.ok) {
+          currentUser = data.user; currentToken = data.token;
+          localStorage.setItem('hc_user', JSON.stringify(currentUser));
+          localStorage.setItem('hc_token', currentToken);
+          updateAuthNav();
+          alert('🎉 Mobile Phone Number Verified via SMS!');
+          toggleModal('otpModal');
+          fetchWorkers();
+        } else {
+          alert(data.error || 'Invalid OTP code.');
+        }
+      } catch (err) {
+        console.error('SMS Verify Error:', err);
+        alert(err.message || 'Verification error. Check terminal output.');
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('loginEmail').value,
+            password: document.getElementById('loginPassword').value,
+          })
+        });
+
+        const contentType = res.headers.get('content-type');
+        let data;
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(`Server returned error: ${text.slice(0, 100)}`);
+        }
+
+        if (res.ok) {
+          currentUser = data.user; currentToken = data.token;
+          localStorage.setItem('hc_user', JSON.stringify(currentUser));
+          localStorage.setItem('hc_token', currentToken);
+          updateAuthNav();
+          alert('Signed In Successfully!');
+          toggleModal('loginModal');
+        } else {
+          alert(data.error || 'Login failed.');
+        }
+      } catch (err) {
+        alert(err.message || 'Server connection error.');
+      }
+    }
+
+    async function loadUserProfilePage() {
+      if (!currentUser) return toggleModal('loginModal');
+
+      const res = await fetch(`${API}/user/profile`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+
+      document.getElementById('pName').innerText = data.user.name;
+      document.getElementById('pRole').innerText = data.user.role.toUpperCase();
+      document.getElementById('pEmail').innerText = data.user.email;
+      document.getElementById('pPhone').innerText = data.user.phone;
+      document.getElementById('pCity').innerText = data.user.city;
+      document.getElementById('pAddress').innerText = data.user.address || 'N/A';
+      document.getElementById('pPic').src = data.profile ? data.profile.profile_pic : 'https://via.placeholder.com/120';
+    }
+
+    async function bookWorker(listerUserId, category, amount) {
+      if (!currentUser) { alert('Please sign in first.'); toggleModal('loginModal'); return; }
+
+      const res = await fetch(`${API}/orders`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentToken}`
+        },
+        body: JSON.stringify({ listerUserId, category, amount, paymentMethod: 'Cash' })
+      });
+
+      if (res.ok) alert('🎉 Booking Confirmed!');
+      else alert((await res.json()).error);
+    }
+
+    async function loadCustomerDashboard() {
+      if (!currentUser) return toggleModal('loginModal');
+      const res = await fetch(`${API}/customer/orders`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const orders = await res.json();
+      document.getElementById('customerOrdersContainer').innerHTML = orders.map(o => `
+        <div class="card" style="margin-bottom:1rem;">
+          <h4>Order #${o.id} - ${o.category}</h4>
+          <p>Provider: ${o.lister_name} (${o.lister_phone})</p>
+          <p style="font-weight:bold; color:var(--primary);">$${o.amount}</p>
+        </div>
+      `).join('');
+    }
+
+    async function loadSellerCentral() {
+      if (!currentUser || currentUser.role !== 'lister') return alert('Access restricted to Listers.');
+      const res = await fetch(`${API}/lister/dashboard`, {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
+      const data = await res.json();
+
+      document.getElementById('scName').innerText = currentUser.name;
+      document.getElementById('scCity').innerText = currentUser.city;
+      document.getElementById('scCategory').innerText = data.profile ? data.profile.category : 'N/A';
+      document.getElementById('scRate').innerText = data.profile ? data.profile.rate : '0';
+      document.getElementById('scPic').src = data.profile ? data.profile.profile_pic : '';
+
+      document.getElementById('scOrders').innerHTML = data.orders.map(o => `
+        <div style="border-bottom:1px solid var(--border); padding:0.5rem 0;">
+          <strong>Order #${o.id} - Customer: ${o.customer_name}</strong>
+          <p>Phone: ${o.customer_phone}</p>
+        </div>
+      `).join('');
+    }
+
+    populateCities();
+    setupDragAndDrop();
+    updateAuthNav();
+    fetchWorkers();
+  </script>
+</body>
+</html>
